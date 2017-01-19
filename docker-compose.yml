@@ -1,0 +1,48 @@
+concourse-db:
+  image: postgres:9.5
+  environment:
+    POSTGRES_DB: concourse
+    POSTGRES_USER: concourse
+    POSTGRES_PASSWORD: changeme
+    PGDATA: /database
+
+concourse-web:
+  image: chaoticfacade/concourse-env:2.6.0
+  links: [concourse-db]
+  command: web
+  ports: ["8080:8080"]
+  environment:
+    CONCOURSE_BASIC_AUTH_USERNAME: concourse
+    CONCOURSE_BASIC_AUTH_PASSWORD: changeme
+    CONCOURSE_EXTERNAL_URL: "http://192.168.15.10:8080"
+    CONCOURSE_POSTGRES_DATA_SOURCE: |-
+      postgres://concourse:changeme@concourse-db:5432/concourse?sslmode=disable
+    # tsa_host_key
+    FILE_CONCOURSE_TSA_HOST_KEY: |-
+      -----BEGIN RSA PRIVATE KEY-----
+      ...
+      -----END RSA PRIVATE KEY-----
+    # worker_key.pub 
+    FILE_CONCOURSE_TSA_AUTHORIZED_KEYS: |-
+      ssh-rsa ...
+    # ~/keys/session_signing_key
+    FILE_CONCOURSE_SESSION_SIGNING_KEY: |-
+      -----BEGIN RSA PRIVATE KEY-----
+      ...
+      -----END RSA PRIVATE KEY-----
+
+concourse-worker:
+  image: chaoticfacade/concourse-env:2.6.0
+  privileged: true
+  links: [concourse-web]
+  command: worker
+  environment:
+    CONCOURSE_TSA_HOST: concourse-web
+    # tsa_host_key.pub
+    FILE_CONCOURSE_TSA_PUBLIC_KEY: |-
+      ssh-rsa ...
+    # worker_key
+    FILE_CONCOURSE_TSA_WORKER_PRIVATE_KEY: |-
+      -----BEGIN RSA PRIVATE KEY-----
+      ...
+      -----END RSA PRIVATE KEY-----
