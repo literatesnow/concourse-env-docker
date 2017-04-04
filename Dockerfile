@@ -1,4 +1,4 @@
-FROM concourse/concourse:2.6.0
+FROM concourse/concourse:latest
 
 ADD bin/start-concourse.sh /usr/local/bin
 
